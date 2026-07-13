@@ -1,0 +1,25 @@
+# Versions pinned for reproducibility (Python 3.10+).
+# Re-check / update pins if this file is generated much later than the project start date.
+# torch + transformers + accelerate co-resolved for Trainer compatibility.
+# For CUDA wheels, install torch from https://pytorch.org first, then:
+#   pip install -r deployment/requirements.txt
+# Docker (CPU) uses the PyPI torch wheel from this file.
+
+# Core ML / training
+torch==2.6.0
+transformers==4.48.3
+datasets==3.2.0
+scikit-learn==1.5.2
+accelerate==1.2.1
+numpy==1.26.4
+pandas==2.2.3
+
+# API / serving
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.2
+
+# Utilities
+pyyaml==6.0.2
+matplotlib==3.9.2
+seaborn==0.13.2

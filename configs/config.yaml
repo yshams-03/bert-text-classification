@@ -1,0 +1,69 @@
+# Dataset paths, split settings, and text formatting for DBpedia 14.
+data:
+  dataset_name: "dbpedia_14"
+  max_length: 128
+  text_template: "{title} [SEP] {content}"
+  val_split: 0.1
+  val_seed: 42
+  stratify: true
+  processed_data_dir: "data/processed"
+
+# Base model, label count, dropout, and ontology class names.
+model:
+  base_model: "bert-base-uncased"
+  num_labels: 14
+  dropout: 0.1
+  label_names:
+    - "Company"
+    - "EducationalInstitution"
+    - "Artist"
+    - "Athlete"
+    - "OfficeHolder"
+    - "MeanOfTransportation"
+    - "Building"
+    - "NaturalPlace"
+    - "Village"
+    - "Animal"
+    - "Plant"
+    - "Album"
+    - "Film"
+    - "WrittenWork"
+
+# Fine-tuning hyperparameters, device, early stopping, and checkpoint paths.
+training:
+  device: "auto"  # auto, cuda, cpu
+  learning_rate: 2.0e-5
+  batch_size: 32
+  eval_batch_size: 64
+  num_epochs: 3
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler_type: "linear"
+  early_stopping_patience: 2
+  early_stopping_metric: "eval_macro_f1"
+  seed: 42
+  output_dir: "checkpoints"
+  logging_steps: 50
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  save_total_limit: 2
+  load_best_model_at_end: true
+
+# Test-set evaluation targets and report output paths.
+evaluation:
+  test_batch_size: 64
+  confusion_matrix_path: "reports/confusion_matrix.png"
+  classification_report_path: "reports/classification_report.txt"
+  target_accuracy: 0.985
+  target_macro_f1: 0.985
+
+# Default model path and top-k for CLI / library inference.
+inference:
+  model_path: "checkpoints/best_model"
+  default_top_k: 3
+
+# FastAPI host/port and model path for the serving layer.
+api:
+  host: "0.0.0.0"
+  port: 8000
+  model_path: "checkpoints/best_model"

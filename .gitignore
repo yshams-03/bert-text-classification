@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Hugging Face / local caches
+.cache/
+*.arrow
+
+# Large runtime artifacts (train locally; mount into Docker)
+checkpoints/
+data/processed/
+data/raw/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
