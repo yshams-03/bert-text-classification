@@ -15,7 +15,7 @@ bert-text-classification/
 │   └── inference.py         # DBpediaClassifier + CLI predictions
 ├── deployment/
 │   ├── api.py               # FastAPI /health and /predict
-│   ├── Dockerfile           # Container image for the API
+│   ├── Dockerfile           # Canonical container image for the API
 │   └── requirements.txt     # Pinned training + serving dependencies
 ├── notebooks/               # Optional exploration notebooks
 ├── data/processed/          # Created by data_preparation.py (Arrow DatasetDict)
@@ -94,18 +94,18 @@ The API field `abstract` is mapped to the classifier's `content` argument.
 ### f. Docker (volume-mount checkpoints — do not bake weights into the image)
 
 ```bash
-docker build -t dbpedia-bert -f deployment/Dockerfile .
+docker build -t dbpedia-bert .
 docker run -p 8000:8000 -v "$(pwd)/checkpoints:/app/checkpoints" dbpedia-bert
 ```
 
 Windows PowerShell:
 
 ```powershell
-docker build -t dbpedia-bert -f deployment/Dockerfile .
+docker build -t dbpedia-bert .
 docker run -p 8000:8000 -v "${PWD}/checkpoints:/app/checkpoints" dbpedia-bert
 ```
 
-`-v .../checkpoints:/app/checkpoints` mounts host `checkpoints/best_model` into the container. Rebuild image after code changes only; swap weights without rebuild. To bake weights in, uncomment `COPY checkpoints/` in [`deployment/Dockerfile`](deployment/Dockerfile).
+`-v .../checkpoints:/app/checkpoints` mounts host `checkpoints/best_model` into the container. Rebuild the image after code changes only; swap weights without rebuilding. The root [`Dockerfile`](Dockerfile) is the canonical image definition. To bake weights in, uncomment its checkpoint `COPY` line.
 
 Health / predict (PowerShell):
 
@@ -146,3 +146,10 @@ Val (best checkpoint, epoch 2): accuracy / macro-F1 **0.9928**. Train ~4h on RTX
 - **SSL / Hugging Face download fails** (`CERTIFICATE_VERIFY_FAILED`) — common on Windows with a corporate proxy. Install `pip-system-certs` so Python trusts the system CA store, then re-run `data_preparation.py`.
 - **CUDA torch vs pinned `torch==`** — if you already have a CUDA build (e.g. `2.6.0+cu124`), install that from [pytorch.org](https://pytorch.org) first; then `pip install -r deployment/requirements.txt` so the remaining pins resolve against it without replacing the GPU wheel.
 - **`uvicorn` / `docker` not recognized** — use `py -m uvicorn ...`. Install/start [Docker Desktop](https://www.docker.com/products/docker-desktop/) for `docker build` / `docker run` with the checkpoints volume mount.
+
+## Reproducibility and project checks
+
+- Training writes `checkpoints/run_manifest.json` with the dataset, text format, seeds, hyperparameters, and library versions.
+- Run `python -m src.create_manifest` to create SHA-256 metadata for checkpoints and processed data in `artifacts/manifest.json` before publishing them to artifact storage.
+- The canonical container definition is the root `Dockerfile`; `docker-compose.yml` uses it directly.
+- Project metadata is defined in `pyproject.toml`, and GitHub Actions runs compilation, Ruff linting, and tests on every push and pull request.

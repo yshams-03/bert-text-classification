@@ -29,7 +29,6 @@ class DBpediaClassifier:
     ) -> None:
         """Load model, tokenizer, and label names from config."""
         config = load_config(config_path)
-        self.label_names: list[str] = list(config["model"]["label_names"])
         self.text_template: str = config["data"]["text_template"]
         self.max_length: int = config["data"]["max_length"]
 
@@ -40,6 +39,18 @@ class DBpediaClassifier:
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        model_labels = getattr(self.model.config, "id2label", {})
+        has_complete_mapping = model_labels and all(
+            str(index) in model_labels for index in range(self.model.config.num_labels)
+        )
+        if has_complete_mapping:
+            self.label_names = [
+                model_labels[str(index)] for index in range(self.model.config.num_labels)
+            ]
+        else:
+            self.label_names = list(config["model"]["label_names"])
+        if len(self.label_names) != self.model.config.num_labels:
+            raise ValueError("Checkpoint label mapping does not match model num_labels")
         self.model.to(self.device)
         self.model.eval()
 

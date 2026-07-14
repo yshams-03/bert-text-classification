@@ -7,6 +7,9 @@ Full training on GPU takes roughly 2-4 hours depending on hardware; on CPU expec
 from __future__ import annotations
 
 import warnings
+import json
+from importlib.metadata import version as package_version
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -57,11 +60,38 @@ def compute_metrics(eval_pred) -> dict:
 def build_model(config: dict) -> AutoModelForSequenceClassification:
     """Load AutoModelForSequenceClassification from config hyperparameters."""
     model_cfg = config["model"]
+    label_names = list(model_cfg["label_names"])
     return AutoModelForSequenceClassification.from_pretrained(
         model_cfg["base_model"],
         num_labels=model_cfg["num_labels"],
         hidden_dropout_prob=model_cfg["dropout"],
+        id2label={index: name for index, name in enumerate(label_names)},
+        label2id={name: index for index, name in enumerate(label_names)},
     )
+
+
+def save_reproducibility_manifest(output_dir: str, config: dict, model_dir: str) -> None:
+    """Save the settings needed to identify and reproduce this checkpoint."""
+    manifest = {
+        "model_path": model_dir,
+        "base_model": config["model"]["base_model"],
+        "num_labels": config["model"]["num_labels"],
+        "label_names": config["model"]["label_names"],
+        "dataset_name": config["data"]["dataset_name"],
+        "max_length": config["data"]["max_length"],
+        "text_template": config["data"]["text_template"],
+        "validation_split": config["data"]["val_split"],
+        "validation_seed": config["data"]["val_seed"],
+        "training_seed": config["training"]["seed"],
+        "training_config": config["training"],
+        "software": {
+            name: package_version(name)
+            for name in ("torch", "transformers", "datasets", "scikit-learn")
+        },
+    }
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    with open(Path(output_dir) / "run_manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
 
 
 def main() -> None:
@@ -115,6 +145,7 @@ def main() -> None:
     best_dir = f"{train_cfg['output_dir']}/best_model"
     trainer.save_model(best_dir)
     tokenizer.save_pretrained(best_dir)
+    save_reproducibility_manifest(train_cfg["output_dir"], config, best_dir)
 
     metrics = trainer.evaluate()
     print(f"Final validation accuracy: {metrics.get('eval_accuracy')}")

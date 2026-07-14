@@ -15,6 +15,12 @@ checkpoints/
 data/processed/
 data/raw/
 
+# Keep reproducibility metadata while ignoring large model/data artifacts.
+artifacts/*
+!artifacts/README.md
+!artifacts/manifest.json
+checkpoints/**/run_manifest.json
+
 # OS / IDE
 .DS_Store
 Thumbs.db
